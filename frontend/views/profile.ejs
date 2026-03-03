@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - Code Playground</title>
+    <link rel="icon" href="/fevi.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="/fevi.ico" type="image/x-icon">
+    <link rel="stylesheet" href="/css/profile.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Additional styles */
+        .logout-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .logout-btn:hover {
+            background-color: #bd2130;
+        }
+
+        .not-signed-in {
+            text-align: center;
+            padding: 50px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin: 20px auto;
+            max-width: 500px;
+        }
+
+        .not-signed-in h2 {
+            margin-bottom: 20px;
+            color: #5b9bd5;
+        }
+
+        .not-signed-in button {
+            background-color: #5b9bd5;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        .not-signed-in button:hover {
+            background-color: #4a90e2;
+        }
+
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #5b9bd5;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 2s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .submission-list li {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.8em;
+        }
+
+        .status-accepted {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        /* Profile picture styles */
+        .profile-pic-container {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            overflow: hidden;
+            border-radius: 50%;
+        }
+
+        .profile-pic-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-right: 20px;
+        }
+
+        .profile-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .profile-pic {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .change-pic-btn {
+            margin-top: 8px;
+            background-color: #5b9bd5;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            text-align: center;
+            display: block;
+            width: 100px;
+        }
+
+        .change-pic-btn:hover {
+            background-color: #4a90e2;
+        }
+
+        .file-input {
+            position: absolute;
+            left: -9999px;
+        }
+
+        /* Contest styles */
+        .contest-history {
+            margin-top: 20px;
+        }
+
+        .rating-chart {
+            width: 100%;
+            height: 300px;
+            margin-top: 20px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            padding: 15px;
+        }
+
+        .contest-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .contest-table th, .contest-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .contest-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+
+        .rating-increase {
+            color: #28a745;
+        }
+
+        .rating-decrease {
+            color: #dc3545;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">
+            <a href="/explore">
+                <img src="/lo.png" alt="Logo">
+            </a>
+        </div>
+        <button type="button" class="mobile-menu-toggle" id="mobile-menu-toggle">
+            <i class="fas fa-bars"></i>
+        </button>
+        <ul class="nav-links" id="nav-links">
+            <li><a href="/explore">Explore</a></li>
+            <li><a href="/problems">Problems</a></li>
+            <li><a href="/contests">Contests</a></li>
+            <li><a href="/discuss">Discuss</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="/profile">👤</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main content that will be shown based on login status -->
+    <div id="profile-content">
+        <div class="loader"></div>
+        <p style="text-align: center;">Loading profile data...</p>
+    </div>
+
+    <!-- Not signed in template -->
+    <template id="not-signed-in-template">
+        <div class="not-signed-in">
+            <h2>Not Signed In</h2>
+            <p>Please sign in to view your profile.</p>
+            <div>
+                <button onclick="window.location.href='/signin'">Sign In</button>
+                <button onclick="window.location.href='/signin'">Sign Up</button>
+            </div>
+        </div>
+    </template>
+
+    <!-- Profile template -->
+    <template id="profile-template">
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <div class="profile-left">
+                <div class="profile-pic-section">
+                    <div class="profile-pic-container">
+                        <img id="profile-pic" src="/profile.png" alt="Profile Picture" class="profile-pic">
+                        <input type="file" id="profile-pic-input" class="file-input" accept="image/*">
+                    </div>
+                    <button type="button" class="change-pic-btn" id="change-profile-pic">Change Picture</button>
+                </div>
+                <div class="user-info">
+                    <h2 class="username" id="user-name">Loading...</h2>
+                    <p class="user-role" id="user-email">Loading...</p>
+                </div>
+            </div>
+            <div class="profile-right">
+                <div class="stat-box">
+                    <h3>Problems</h3>
+                    <p id="problems-solved">0</p>
+                </div>
+                <div class="stat-box">
+                    <h3>Contest Rating</h3>
+                    <p id="contest-rating">1500</p>
+                </div>
+                <div class="stat-box">
+                    <h3>Member Since</h3>
+                    <p id="member-since">--</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Content -->
+        <div class="profile-container">
+            <div class="sidebar">
+                <ul>
+                    <li class="active" onclick="switchTab('overview')">Overview</li>
+                    <li onclick="switchTab('submissions')">Submissions</li>
+                    <li onclick="switchTab('contests')">Contests</li>
+                    <li onclick="switchTab('settings')">Settings</li>
+                </ul>
+            </div>
+
+            <div class="content">
+                <!-- Overview Section -->
+                <div class="tab-content" id="overview">
+                    <h3>Profile Overview</h3>
+                    <div class="profile-stats">
+                        <div class="info-box">
+                            <h4>Problems Solved</h4>
+                            <p id="overview-problems-solved">0</p>
+                        </div>
+                        <div class="info-box">
+                            <h4>Total Submissions</h4>
+                            <p id="overview-submissions">0</p>
+                        </div>
+                        <div class="info-box">
+                            <h4>Accepted Submissions</h4>
+                            <p id="overview-accepted">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submissions Section -->
+                <div class="tab-content hidden" id="submissions">
+                    <h3>Recent Submissions</h3>
+                    <ul class="submission-list" id="submissions-list">
+                        <!-- Submissions will be loaded here -->
+                        <li>Loading submissions...</li>
+                    </ul>
+                </div>
+
+                <!-- Contests Section -->
+                <div class="tab-content hidden" id="contests">
+                    <h3>Contest History</h3>
+                    <div class="contest-history">
+                        <div class="rating-chart" id="rating-chart">
+                            <!-- Rating chart will be displayed here -->
+                            <p style="text-align: center; padding-top: 140px;">Rating chart will be displayed here</p>
+                        </div>
+                        <h4>Recent Contests</h4>
+                        <div class="table-responsive">
+                            <table class="contest-table" id="contest-table">
+                                <thead>
+                                    <tr>
+                                        <th>Contest</th>
+                                        <th>Rank</th>
+                                        <th>Score</th>
+                                        <th>Rating</th>
+                                        <th>Change</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="contest-history">
+                                    <!-- Contest history will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Section -->
+                <div class="tab-content hidden" id="settings">
+                    <h3>Account Settings</h3>
+                    <div class="settings-form">
+                        <input type="text" id="username-input" placeholder="Change Username">
+                        <input type="password" id="password-input" placeholder="Change Password">
+                        <input type="password" id="confirm-password-input" placeholder="Confirm Password">
+                        <button id="save-changes">Save Changes</button>
+                        <button id="delete-account">Delete Account</button>
+                        <button class="logout-btn" id="logout-btn">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2025 Code Playground. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Global variables
+        let userId = localStorage.getItem('userId');
+        let userData = null;
+
+        // Function to toggle mobile menu
+        function toggleMobileMenu() {
+            const navLinks = document.getElementById('nav-links');
+            navLinks.classList.toggle('active');
+        }
+
+        // Function to switch between tabs
+        function switchTab(tabId) {
+            document.querySelectorAll(".tab-content").forEach((content) => content.classList.add("hidden"));
+            document.getElementById(tabId).classList.remove("hidden");
+
+            document.querySelectorAll(".sidebar li").forEach((tab) => tab.classList.remove("active"));
+            document.querySelector(`[onclick="switchTab('${tabId}')"]`).classList.add("active");
+        }
+
+        // Function to format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        // Function to load user profile data
+        async function loadUserProfile() {
+            if (!userId) {
+                showNotSignedIn();
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/auth/profile/${userId}`);
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch profile data');
+                }
+
+                userData = await response.json();
+                displayUserProfile(userData);
+            } catch (error) {
+                console.error('Error loading profile data:', error);
+                document.getElementById('profile-content').innerHTML = `
+                    <div class="not-signed-in">
+                        <h2>Error Loading Profile</h2>
+                        <p>${error.message}</p>
+                        <button onclick="window.location.reload()">Try Again</button>
+                    </div>
+                `;
+            }
+        }
+
+        // Function to show the "not signed in" message
+        function showNotSignedIn() {
+            const template = document.getElementById('not-signed-in-template');
+            const content = template.content.cloneNode(true);
+            const profileContent = document.getElementById('profile-content');
+
+            profileContent.innerHTML = '';
+            profileContent.appendChild(content);
+        }
+
+        // Function to display user profile
+        function displayUserProfile(data) {
+            const template = document.getElementById('profile-template');
+            const content = template.content.cloneNode(true);
+            const profileContent = document.getElementById('profile-content');
+
+            profileContent.innerHTML = '';
+            profileContent.appendChild(content);
+
+            // Fill in user information
+            document.getElementById('user-name').textContent = data.user.username;
+            document.getElementById('user-email').textContent = data.user.email;
+            document.getElementById('problems-solved').textContent = data.stats.problemsSolved;
+            document.getElementById('contest-rating').textContent = data.user.contestRating?.current || 1500;
+            document.getElementById('member-since').textContent = formatDate(data.user.createdAt);
+
+            // Set profile picture
+            const profilePic = document.getElementById('profile-pic');
+            if (data.user.profilePicture) {
+                profilePic.src = data.user.profilePicture;
+            }
+
+            // Fill in overview stats
+            document.getElementById('overview-problems-solved').textContent = data.stats.problemsSolved;
+            document.getElementById('overview-submissions').textContent = data.stats.totalSubmissions;
+            document.getElementById('overview-accepted').textContent = data.stats.acceptedSubmissions;
+
+            // Fill in submissions
+            const submissionsList = document.getElementById('submissions-list');
+
+            if (data.submissions && data.submissions.length > 0) {
+                submissionsList.innerHTML = '';
+
+                data.submissions.forEach(submission => {
+                    const submissionDate = formatDate(submission.timestamp);
+                    const statusClass = submission.status === 'Accepted' ? 'status-accepted' : 'status-error';
+
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <div>Problem: <strong>${submission.problem || 'Unknown'}</strong></div>
+                        <div>Language: ${submission.language}</div>
+                        <div>Date: ${submissionDate}</div>
+                        <div>Status: <span class="status-badge ${statusClass}">${submission.status}</span></div>
+                    `;
+
+                    submissionsList.appendChild(li);
+                });
+            } else {
+                submissionsList.innerHTML = '<div class="empty-message">No submissions yet</div>';
+            }
+
+            // Fill in contest history
+            const contestHistory = document.getElementById('contest-history');
+            
+            if (data.user.contestRating?.history && data.user.contestRating.history.length > 0) {
+                contestHistory.innerHTML = '';
+                
+                data.user.contestRating.history.forEach(contest => {
+                    const changeClass = contest.change > 0 ? 'rating-increase' : (contest.change < 0 ? 'rating-decrease' : '');
+                    const changeSign = contest.change > 0 ? '+' : '';
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${contest.contestName || 'Contest'}</td>
+                        <td>${data.user.contestsParticipated?.find(c => c.contest == contest.contestId)?.rank || '-'}</td>
+                        <td>${data.user.contestsParticipated?.find(c => c.contest == contest.contestId)?.score || '-'}</td>
+                        <td>${contest.rating}</td>
+                        <td class="${changeClass}">${changeSign}${contest.change}</td>
+                    `;
+                    
+                    contestHistory.appendChild(row);
+                });
+            } else {
+                contestHistory.innerHTML = '<tr><td colspan="5" class="empty-message">No contest history yet</td></tr>';
+            }
+
+            // Set input values for settings
+            document.getElementById('username-input').value = data.user.username;
+
+            // Add event listeners
+            document.getElementById('save-changes').addEventListener('click', saveChanges);
+            document.getElementById('delete-account').addEventListener('click', deleteAccount);
+            document.getElementById('logout-btn').addEventListener('click', logout);
+            
+            // Profile picture change event
+            const changeProfilePic = document.getElementById('change-profile-pic');
+            const profilePicInput = document.getElementById('profile-pic-input');
+            
+            changeProfilePic.addEventListener('click', () => {
+                profilePicInput.click();
+            });
+            
+            profilePicInput.addEventListener('change', handleProfilePictureChange);
+        }
+
+        // Function to handle profile picture change
+        async function handleProfilePictureChange(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Validate file type
+            const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            if (!validImageTypes.includes(file.type)) {
+                alert('Please select a valid image file (JPEG, PNG, GIF, WEBP)');
+                return;
+            }
+            
+            // Validate file size (max 2MB)
+            if (file.size > 2 * 1024 * 1024) {
+                alert('Image size must be less than 2MB');
+                return;
+            }
+            
+            // Create FormData object
+            const formData = new FormData();
+            formData.append('profilePicture', file);
+            formData.append('userId', userId);
+            
+            try {
+                // Show loading state
+                const profilePic = document.getElementById('profile-pic');
+                profilePic.style.opacity = '0.5';
+                
+                // Upload image
+                const response = await fetch('/api/auth/upload-profile-picture', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to upload profile picture');
+                }
+                
+                const result = await response.json();
+                
+                // Update profile picture
+                if (result.profilePicture) {
+                    profilePic.src = result.profilePicture + '?t=' + new Date().getTime(); // Add timestamp to prevent caching
+                }
+                
+                profilePic.style.opacity = '1';
+            } catch (error) {
+                console.error('Error uploading profile picture:', error);
+                alert('Failed to upload profile picture: ' + error.message);
+                document.getElementById('profile-pic').style.opacity = '1';
+            }
+        }
+
+        // Function to save profile changes
+        async function saveChanges() {
+            const username = document.getElementById('username-input').value;
+            const password = document.getElementById('password-input').value;
+            const confirmPassword = document.getElementById('confirm-password-input').value;
+
+            if (!username) {
+                alert('Username cannot be empty');
+                return;
+            }
+
+            if (password && password !== confirmPassword) {
+                alert('Passwords do not match');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/auth/user/${userId}/update`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username,
+                        password: password || undefined
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to update profile');
+                }
+
+                alert('Profile updated successfully');
+                // Reload profile data
+                loadUserProfile();
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                alert(`Error updating profile: ${error.message}`);
+            }
+        }
+
+        // Function to delete account
+        async function deleteAccount() {
+            if (!confirm('Are you sure you want to delete your account? This cannot be undone!')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/auth/user/${userId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to delete account');
+                }
+
+                alert('Account deleted successfully');
+                logout();
+            } catch (error) {
+                console.error('Error deleting account:', error);
+                alert(`Error deleting account: ${error.message}`);
+            }
+        }
+
+        // Function to log out
+        function logout() {
+            localStorage.removeItem('userId');
+            alert('Logged out successfully');
+            window.location.href = '/signin';
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUserProfile();
+            
+            // Add mobile menu toggle listener
+            const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+            if (mobileMenuToggle) {
+                mobileMenuToggle.addEventListener('click', toggleMobileMenu);
+            }
+            
+            // Add event listeners to close mobile menu when a link is clicked
+            const navLinks = document.querySelectorAll('.nav-links a');
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    document.getElementById('nav-links').classList.remove('active');
+                });
+            });
+            
+            // Handle resize events to fix menu state
+            window.addEventListener('resize', () => {
+                if (window.innerWidth > 640) {
+                    document.getElementById('nav-links').classList.remove('active');
+                }
+            });
+        });
+    </script>
+
+</body>
+
+</html>

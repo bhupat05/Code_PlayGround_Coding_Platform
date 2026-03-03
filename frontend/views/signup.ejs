@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sign Up - Code Playground</title>
+    <link rel="icon" href="/fevi.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="/fevi.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- Use Font Awesome from cdnjs instead of the kit URL that has CORS issues -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        :root {
+            --primary: rgba(0, 122, 255, 0.9);  /* Deeper blue */
+            --secondary: rgba(0, 84, 180, 0.9);  /* Darker blue */
+            --accent: rgba(64, 156, 255, 0.9);  /* Lighter blue */
+            --light: rgba(255, 255, 255, 0.9);
+            --dark: rgba(0, 0, 0, 0.9);
+            --text-light: rgba(255, 255, 255, 0.95);
+            --text-dark: rgba(0, 0, 0, 0.85);
+            --error: rgba(255, 59, 48, 0.9);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+            position: relative;
+            background: url("/auth.gif") center/cover no-repeat fixed;
+            animation: none !important;
+            padding: 15px;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);  /* Brightened overlay */
+            z-index: -1;
+        }
+        
+        .CP_form {
+            width: 100%;
+            max-width: 420px; /* More compact form */
+            margin: 0 auto;
+            padding: 25px 20px; /* Reduced padding */
+            background: rgba(0, 0, 0, 0.5);  /* Brighter form background */
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        
+        .CP_logo {
+            text-align: center;
+            margin-bottom: 12px; /* Reduced margin */
+        }
+        
+        .logo {
+            width: 75px; /* Smaller logo */
+            transition: all 0.3s ease;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+        
+        .logo:hover {
+            transform: scale(1.05);
+        }
+        
+        h2 {
+            font-size: 20px; /* Smaller heading */
+            color: var(--light);  /* White text */
+            margin-bottom: 18px;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .text-field {
+            position: relative;
+            margin-bottom: 14px; /* Reduced spacing */
+        }
+        
+        .text-field label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 13px;
+            color: var(--light);
+            font-weight: 500;
+        }
+        
+        .text-field input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            font-size: 13px;
+            outline: none;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.15);  /* Brighter input background */
+            color: var(--light);  /* White text */
+        }
+        
+        .text-field input:focus {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 8px rgba(0, 122, 255, 0.3);
+        }
+        
+        .CP_button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: var(--primary);
+            color: white;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            margin-top: 8px;
+        }
+        
+        .CP_button:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 84, 180, 0.3);
+        }
+        
+        .CP_actions {
+            margin-top: 16px;
+            text-align: center;
+        }
+        
+        .CP_row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        
+        .CP_row span {
+            color: var(--light);
+            font-size: 13px;
+        }
+        
+        .CP_row a {
+            color: var(--accent);
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .CP_row a:hover {
+            text-decoration: underline;
+        }
+        
+        ::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Responsive Adjustments */
+        @media (min-width: 576px) {
+            .CP_form {
+                padding: 30px 25px;
+            }
+            
+            .logo {
+                width: 80px;
+            }
+            
+            h2 {
+                font-size: 22px;
+            }
+            
+            .text-field {
+                margin-bottom: 16px;
+            }
+            
+            .text-field input {
+                padding: 11px 15px;
+                font-size: 14px;
+            }
+        }
+        
+        @media (min-width: 768px) {
+            .CP_form {
+                padding: 35px;
+                max-width: 450px;
+            }
+            
+            .logo {
+                width: 85px;
+            }
+            
+            .text-field {
+                margin-bottom: 18px;
+            }
+            
+            .text-field label {
+                margin-bottom: 6px;
+                font-size: 14px;
+            }
+            
+            .CP_actions {
+                margin-top: 20px;
+            }
+            
+            .CP_row {
+                gap: 8px;
+            }
+        }
+        
+        @media (max-height: 600px) {
+            body {
+                padding: 10px 0;
+                align-items: flex-start;
+            }
+            
+            .CP_form {
+                padding: 20px;
+                margin: 10px auto;
+            }
+            
+            .logo {
+                width: 65px;
+            }
+            
+            h2 {
+                font-size: 18px;
+                margin-bottom: 12px;
+            }
+            
+            .text-field {
+                margin-bottom: 10px;
+            }
+            
+            .CP_button {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <form class="CP_form" id="signup-form">
+        <div class="CP_logo">
+            <a href="/" title="Logo">
+                <img src="code playground logo.png" alt="Code Playground Logo" class="logo">
+            </a>
+        </div>
+
+        <h2>Create an Account</h2>
+
+        <div class="text-field">
+            <label for="name">Full Name</label>
+            <input type="text" id="name" name="name" autocomplete="off" placeholder="Your Name" required>
+        </div>
+
+        <div class="text-field">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" autocomplete="off" placeholder="you@example.com" required>
+        </div>
+
+        <div class="text-field">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" autocomplete="off" placeholder="Enter your password"
+                required>
+        </div>
+
+        <div class="text-field">
+            <label for="confirm_password">Confirm Password</label>
+            <input type="password" id="confirm_password" name="confirm_password" autocomplete="off"
+                placeholder="Re-enter your password" required>
+        </div>
+
+        <button type="submit" class="CP_button">Sign Up</button>
+
+        <div class="CP_actions">
+            <div class="CP_row">
+                <span>Already have an account?</span>
+                <a href="/signin" title="Sign In">Sign In</a>
+            </div>
+        </div>
+    </form>
+
+    <script>
+        document.getElementById("signup-form").addEventListener("submit", async function (e) {
+            e.preventDefault();
+            
+            const name = document.getElementById("name").value;
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            const confirmPassword = document.getElementById("confirm_password").value;
+            
+            if (password !== confirmPassword) {
+                alert("Passwords don't match!");
+                return;
+            }
+            
+            try {
+                // Use form data instead of JSON to match backend expectations
+                const formData = new FormData();
+                formData.append("name", name);
+                formData.append("email", email);
+                formData.append("password", password);
+                formData.append("confirm_password", confirmPassword);
+                
+                const response = await fetch("/signup", {
+                    method: "POST",
+                    body: formData
+                });
+                
+                if (response.redirected) {
+                    // If the server redirects, follow the redirect
+                    window.location.href = response.url;
+                } else {
+                    // Handle non-redirect responses
+                    const contentType = response.headers.get("content-type");
+                    if (contentType && contentType.includes("application/json")) {
+                        const data = await response.json();
+                        if (!response.ok) {
+                            alert(data.message || "Error during signup");
+                        } else {
+                            window.location.href = "/signin";
+                        }
+                    } else {
+                        // If not JSON, handle as text
+                        const text = await response.text();
+                        if (!response.ok) {
+                            alert("Error during signup");
+                        } else {
+                            window.location.href = "/signin";
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("Signup Error:", error);
+                alert("An error occurred during signup. Please try again.");
+            }
+        });
+    </script>
+</body>
+
+</html>

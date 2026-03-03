@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - Code Playground</title>
+    <link rel="icon" href="/fevi.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="/fevi.ico" type="image/x-icon">
+    <link rel="stylesheet" href="css/contact.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+
+<body>
+    <!-- Mobile Menu Overlay -->
+    <div class="overlay"></div>
+    
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">
+            <a href="/explore" title="Logo">
+                <img src="lo.png" alt="Logo">
+            </a>
+        </div>
+        <!-- Mobile Menu Toggle Button -->
+        <div class="menu-toggle">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="/explore">Explore</a></li>
+            <li><a href="/problems">Problems</a></li>
+            <li><a href="/contests">Contests</a></li>
+            <li><a href="/discuss">Discuss</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="/profile">👤</a></li>
+        </ul>
+    </nav>
+
+    <!-- Contact Section -->
+    <section class="contact">
+        <h2>Contact Us</h2>
+        <p>Have any questions or feedback? Feel free to reach out to us!</p>
+
+        <div class="contact-container">
+            <!-- Contact Form -->
+            <form class="contact-form" id="contactForm">
+                <label for="name">Full Name</label>
+                <input type="text" id="name" name="name" placeholder="Your Name" required>
+
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" placeholder="you@example.com" required>
+
+                <label for="subject">Subject</label>
+                <input type="text" id="subject" name="subject" placeholder="Subject" required>
+
+                <label for="message">Message</label>
+                <textarea id="message" name="message" rows="5" placeholder="Your Message" required></textarea>
+
+                <button type="submit"><i class="fas fa-paper-plane"></i> Send Message</button>
+                <div id="formMessage" class="form-message"></div>
+            </form>
+
+            <!-- Contact Info -->
+            <div class="contact-info">
+                <h3>Get in Touch</h3>
+                <p><i class="fas fa-envelope"></i> <strong>Email:</strong> support@codeplayground.com</p>
+                <p><i class="fas fa-phone"></i> <strong>Phone:</strong> +91 6263733846</p>
+                <p><i class="fas fa-map-marker-alt"></i> <strong>Address :  </strong>IIIT Vadodara - International Campus Diu (IIITV-ICD), Education Hub, Kevdi - Diu (U.T) -362520</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq">
+        <h2>Frequently Asked Questions</h2>
+        <div class="faq-container">
+            <div class="faq-item">
+                <button class="faq-question">
+                    <i class="fas fa-question-circle"></i> What is Code Playground? 
+                    <span class="arrow"><i class="fas fa-chevron-down"></i></span>
+                </button>
+                <div class="faq-answer">
+                    <p>Code Playground is an online coding platform where users can practice coding,
+                    compete in contests, and prepare for interviews. We offer a wide range of programming
+                    problems across different difficulty levels and topics.</p>
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question">
+                    <i class="fas fa-credit-card"></i> Is Code Playground free to use? 
+                    <span class="arrow"><i class="fas fa-chevron-down"></i></span>
+                </button>
+                <div class="faq-answer">
+                    <p>Yes! You can solve problems and participate in contests for free. Some premium
+                    features may require a subscription, but the core functionality of the platform
+                    is completely free for all users.</p>
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question">
+                    <i class="fas fa-trophy"></i> How do I participate in a contest? 
+                    <span class="arrow"><i class="fas fa-chevron-down"></i></span>
+                </button>
+                <div class="faq-answer">
+                    <p>Simply navigate to the 'Contests' section, register for an ongoing contest, and
+                    start solving problems. You can see your ranking in real-time on the leaderboard
+                    during the contest period.</p>
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question">
+                    <i class="fas fa-headset"></i> How can I contact support? 
+                    <span class="arrow"><i class="fas fa-chevron-down"></i></span>
+                </button>
+                <div class="faq-answer">
+                    <p>You can reach us at support@codeplayground.com or use the contact form above.
+                    Our support team is available Monday through Friday, 9 AM to 6 PM EST, and we
+                    typically respond within 24 hours.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><i class="far fa-copyright"></i> 2025 Code Playground. All rights reserved.</p>
+    </footer>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // FAQ Toggle
+            const faqItems = document.querySelectorAll(".faq-item");
+            faqItems.forEach(item => {
+                item.querySelector(".faq-question").addEventListener("click", function () {
+                    item.classList.toggle("active");
+                });
+            });
+            
+            // Contact Form Submission
+            const contactForm = document.getElementById('contactForm');
+            const formMessage = document.getElementById('formMessage');
+            
+            contactForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const formData = {
+                    name: document.getElementById('name').value,
+                    email: document.getElementById('email').value,
+                    subject: document.getElementById('subject').value,
+                    message: document.getElementById('message').value
+                };
+                
+                try {
+                    formMessage.textContent = 'Sending your message...';
+                    formMessage.style.color = '#333';
+                    
+                    const response = await fetch('/api/contact', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(formData)
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        formMessage.textContent = data.message;
+                        formMessage.style.color = '#4CAF50';
+                        contactForm.reset();
+                    } else {
+                        formMessage.textContent = data.message || 'Failed to send your message. Please try again.';
+                        formMessage.style.color = '#f44336';
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    formMessage.textContent = 'Network error. Please try again later.';
+                    formMessage.style.color = '#f44336';
+                }
+            });
+            
+            // Mobile Menu Toggle
+            const menuToggle = document.querySelector(".menu-toggle");
+            const navLinks = document.querySelector(".nav-links");
+            const overlay = document.querySelector(".overlay");
+            
+            menuToggle.addEventListener("click", function() {
+                menuToggle.classList.toggle("active");
+                navLinks.classList.toggle("active");
+                overlay.classList.toggle("active");
+                document.body.style.overflow = navLinks.classList.contains("active") ? "hidden" : "";
+            });
+            
+            // Close mobile menu when clicking outside
+            overlay.addEventListener("click", function() {
+                menuToggle.classList.remove("active");
+                navLinks.classList.remove("active");
+                overlay.classList.remove("active");
+                document.body.style.overflow = "";
+            });
+            
+            // Close mobile menu when window resized above mobile breakpoint
+            window.addEventListener("resize", function() {
+                if (window.innerWidth > 768 && navLinks.classList.contains("active")) {
+                    menuToggle.classList.remove("active");
+                    navLinks.classList.remove("active");
+                    overlay.classList.remove("active");
+                    document.body.style.overflow = "";
+                }
+            });
+            
+            // Close mobile menu when clicking a nav link
+            const mobileNavLinks = document.querySelectorAll(".nav-links a");
+            mobileNavLinks.forEach(link => {
+                link.addEventListener("click", function() {
+                    if (navLinks.classList.contains("active")) {
+                        menuToggle.classList.remove("active");
+                        navLinks.classList.remove("active");
+                        overlay.classList.remove("active");
+                        document.body.style.overflow = "";
+                    }
+                });
+            });
+        });
+    </script>
+
+</body>
+
+</html>

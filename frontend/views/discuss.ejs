@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discuss - Code Playground</title>
+    <link rel="icon" href="/fevi.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="/fevi.ico" type="image/x-icon">
+    <link rel="stylesheet" href="/css/discuss.css">
+</head>
+
+<body>
+    <!-- Mobile menu overlay -->
+    <div class="menu-overlay"></div>
+    
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">
+            <a href="/explore">
+                <img src="/lo.png" alt="Logo">
+            </a>
+        </div>
+        <!-- Hamburger menu toggle -->
+        <div class="menu-toggle">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="/explore">Explore</a></li>
+            <li><a href="/problems">Problems</a></li>
+            <li><a href="/contests">Contests</a></li>
+            <li><a href="/discuss">Discuss</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="/profile" id="profile-link">👤</a></li>
+        </ul>
+    </nav>
+
+    <!-- Discussion Section -->
+    <div class="discussion-container">
+        <div class="discussion-header">
+            <h1>Discussion Forum</h1>
+            <div class="discussion-actions">
+                <select id="tag-filter" class="form-control">
+                    <option value="">All Tags</option>
+                    <!-- Popular tags will be loaded here -->
+                </select>
+                <button id="create-discussion-btn" class="btn">Start Discussion</button>
+            </div>
+        </div>
+
+        <div class="search-bar">
+            <input type="text" id="search-input" placeholder="Search discussions...">
+            <button id="search-btn" class="btn">Search</button>
+        </div>
+
+        <!-- Discussion Threads -->
+        <div id="discussions-list">
+            <div class="loader"></div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination" id="pagination"></div>
+    </div>
+
+    <!-- Create Discussion Modal -->
+    <div id="create-discussion-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Create New Discussion</h2>
+            <form id="discussion-form">
+                <div class="form-group">
+                    <label for="discussion-title">Title</label>
+                    <input type="text" id="discussion-title" class="form-control" placeholder="Enter a title for your discussion" required>
+                </div>
+                <div class="form-group">
+                    <label for="discussion-content">Content</label>
+                    <textarea id="discussion-content" class="form-control" rows="6" placeholder="Describe your question or topic" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="discussion-tags">Tags (press Enter to add)</label>
+                    <input type="text" id="discussion-tags" class="form-control" placeholder="Add tags related to your discussion">
+                    <div id="tags-container" class="tag-input"></div>
+                </div>
+                <button type="submit" class="btn">Post Discussion</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- View Discussion Modal -->
+    <div id="view-discussion-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="modal-scrollable-content">
+                <div id="discussion-details">
+                    <div class="loader"></div>
+                </div>
+                <div id="comments-container"></div>
+            </div>
+            <div class="form-group">
+                <textarea id="comment-input" class="form-control" rows="3" placeholder="Add a comment..."></textarea>
+                <button id="submit-comment" class="btn">Add Comment</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2025 Code Playground. All rights reserved.</p>
+    </footer>
+
+    <style>
+        .vote-btn {
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        .vote-btn:hover {
+            background-color: #f0f0f0;
+        }
+        .vote-btn.voted {
+            background-color: #e0e0e0;
+            cursor: not-allowed;
+        }
+    </style>
+
+    <script>
+        // Mobile menu toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.querySelector('.menu-toggle');
+            const navLinks = document.querySelector('.nav-links');
+            const menuOverlay = document.querySelector('.menu-overlay');
+            
+            // Function to toggle menu
+            function toggleMenu() {
+                menuToggle.classList.toggle('active');
+                navLinks.classList.toggle('active');
+                menuOverlay.classList.toggle('active');
+                
+                // Prevent body scrolling when menu is open
+                if (navLinks.classList.contains('active')) {
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    document.body.style.overflow = 'auto';
+                }
+            }
+            
+            // Event listeners
+            menuToggle.addEventListener('click', toggleMenu);
+            menuOverlay.addEventListener('click', toggleMenu);
+            
+            // Close menu when a link is clicked
+            const navItems = document.querySelectorAll('.nav-links a');
+            navItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    if (navLinks.classList.contains('active')) {
+                        toggleMenu();
+                    }
+                });
+            });
+            
+            // Close menu on window resize (if width becomes larger than mobile breakpoint)
+            window.addEventListener('resize', () => {
+                if (window.innerWidth > 768 && navLinks.classList.contains('active')) {
+                    toggleMenu();
+                }
+            });
+        });
+        
+        // Global variables
+        let currentPage = 1;
+        let totalPages = 1;
+        let currentDiscussionId = null;
+        let currentTags = [];
+        const userId = localStorage.getItem('userId');
+        
+        // Update profile link based on login status
+        document.addEventListener('DOMContentLoaded', () => {
+            const profileLink = document.getElementById('profile-link');
+            
+            if (userId) {
+                // User is logged in, keep the profile link as is
+                profileLink.title = "View Profile";
+            } else {
+                // User is not logged in, change the icon to indicate this
+                profileLink.innerHTML = "👤";
+                profileLink.title = "Please Sign In";
+            }
+            
+            // Load discussions and popular tags
+            loadDiscussions();
+            loadPopularTags();
+        });
+        
+        // Function to load discussions
+        async function loadDiscussions(page = 1, tag = '', search = '') {
+            try {
+                const discussionsList = document.getElementById('discussions-list');
+                discussionsList.innerHTML = '<div class="loader"></div>';
+                
+                // Build query string
+                let queryParams = new URLSearchParams();
+                queryParams.append('page', page);
+                if (tag) queryParams.append('tag', tag);
+                if (search) queryParams.append('search', search);
+                
+                // Fetch discussions
+                const response = await fetch(`/api/discuss?${queryParams.toString()}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Update global variables
+                    currentPage = data.currentPage;
+                    totalPages = data.totalPages;
+                    
+                    // Render discussions
+                    renderDiscussions(data.discussions);
+                    
+                    // Render pagination
+                    renderPagination();
+                } else {
+                    discussionsList.innerHTML = `<p>Error loading discussions: ${data.message}</p>`;
+                }
+            } catch (error) {
+                console.error('Error loading discussions:', error);
+                document.getElementById('discussions-list').innerHTML = `<p>Error loading discussions: ${error.message}</p>`;
+            }
+        }
+        
+        // Function to render discussions
+        function renderDiscussions(discussions) {
+            const discussionsList = document.getElementById('discussions-list');
+            
+            if (!discussions || discussions.length === 0) {
+                discussionsList.innerHTML = '<p>No discussions found.</p>';
+                return;
+            }
+            
+            let html = '';
+            discussions.forEach(discussion => {
+                const date = new Date(discussion.createdAt).toLocaleDateString();
+                const tags = discussion.tags && discussion.tags.length > 0 
+                    ? discussion.tags.map(tag => `<span class="tag">${tag}</span>`).join('')
+                    : '<span class="tag">General</span>';
+                
+                html += `
+                    <div class="discussion-thread" data-id="${discussion._id}">
+                        <h3><a href="#" onclick="viewDiscussion('${discussion._id}'); return false;">${discussion.title}</a></h3>
+                        <p>Posted by <strong>${discussion.authorName}</strong> • ${date}</p>
+                        <div class="tags-container">Tags: ${tags}</div>
+                        <div class="thread-stats">
+                            <span class="vote-btn ${discussion.upvotedBy?.includes(userId) ? 'voted' : ''}" onclick="voteDiscussion('${discussion._id}', 'up')">🔼 ${discussion.upvotes}</span>
+                            <span class="vote-btn ${discussion.downvotedBy?.includes(userId) ? 'voted' : ''}" onclick="voteDiscussion('${discussion._id}', 'down')">🔽 ${discussion.downvotes}</span>
+                            <span onclick="viewDiscussion('${discussion._id}')">💬 ${discussion.comments ? discussion.comments.length : 0}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            discussionsList.innerHTML = html;
+        }
+        
+        // Function to render pagination
+        function renderPagination() {
+            const pagination = document.getElementById('pagination');
+            let html = '';
+            
+            if (totalPages > 1) {
+                // Previous button
+                html += `<button onclick="loadDiscussions(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>`;
+                
+                // Page numbers
+                for (let i = 1; i <= totalPages; i++) {
+                    html += `<button onclick="loadDiscussions(${i})" class="${i === currentPage ? 'active' : ''}">${i}</button>`;
+                }
+                
+                // Next button
+                html += `<button onclick="loadDiscussions(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>`;
+            }
+            
+            pagination.innerHTML = html;
+        }
+        
+        // Function to load popular tags
+        async function loadPopularTags() {
+            try {
+                const response = await fetch('/api/discuss/tags/popular');
+                const tags = await response.json();
+                
+                if (response.ok) {
+                    const tagFilter = document.getElementById('tag-filter');
+                    let html = '<option value="">All Tags</option>';
+                    
+                    tags.forEach(tag => {
+                        html += `<option value="${tag._id}">${tag._id} (${tag.count})</option>`;
+                    });
+                    
+                    tagFilter.innerHTML = html;
+                }
+            } catch (error) {
+                console.error('Error loading popular tags:', error);
+            }
+        }
+        
+        // Function to view a discussion
+        async function viewDiscussion(discussionId) {
+            if (!discussionId) return;
+            
+            try {
+                currentDiscussionId = discussionId;
+                const modal = document.getElementById('view-discussion-modal');
+                const discussionDetails = document.getElementById('discussion-details');
+                const commentsContainer = document.getElementById('comments-container');
+                
+                // Show modal and loading indicator
+                modal.style.display = 'flex';
+                discussionDetails.innerHTML = '<div class="loader"></div>';
+                commentsContainer.innerHTML = '';
+                
+                // Fetch discussion data
+                const response = await fetch(`/api/discuss/${discussionId}`);
+                const discussion = await response.json();
+                
+                if (response.ok) {
+                    // Render discussion details
+                    const date = new Date(discussion.createdAt).toLocaleDateString();
+                    const tags = discussion.tags && discussion.tags.length > 0 
+                        ? discussion.tags.map(tag => `<span class="tag">${tag}</span>`).join('')
+                        : '<span class="tag">General</span>';
+                    
+                    let html = `
+                        <h2>${discussion.title}</h2>
+                        <p class="meta">Posted by <strong>${discussion.authorName}</strong> • ${date}</p>
+                        <div class="tags-container">Tags: ${tags}</div>
+                        <div class="content">${discussion.content}</div>
+                        <div class="thread-stats">
+                            <span class="vote-btn ${discussion.upvotedBy?.includes(userId) ? 'voted' : ''}" onclick="voteDiscussion('${discussion._id}', 'up')">🔼 ${discussion.upvotes}</span>
+                            <span class="vote-btn ${discussion.downvotedBy?.includes(userId) ? 'voted' : ''}" onclick="voteDiscussion('${discussion._id}', 'down')">🔽 ${discussion.downvotes}</span>
+                        </div>
+                        <h3>Comments (${discussion.comments.length})</h3>
+                    `;
+                    
+                    discussionDetails.innerHTML = html;
+                    
+                    // Render comments
+                    if (discussion.comments.length > 0) {
+                        html = '';
+                        discussion.comments.forEach(comment => {
+                            const commentDate = new Date(comment.createdAt).toLocaleDateString();
+                            html += `
+                                <div class="comment">
+                                    <p><strong>${comment.authorName}</strong> • ${commentDate}</p>
+                                    <p>${comment.content}</p>
+                                </div>
+                            `;
+                        });
+                        commentsContainer.innerHTML = html;
+                    } else {
+                        commentsContainer.innerHTML = '<p>No comments yet.</p>';
+                    }
+                } else {
+                    discussionDetails.innerHTML = `<p>Error loading discussion: ${discussion.message}</p>`;
+                }
+            } catch (error) {
+                console.error('Error viewing discussion:', error);
+                document.getElementById('discussion-details').innerHTML = `<p>Error loading discussion: ${error.message}</p>`;
+            }
+        }
+        
+        // Function to add a comment
+        async function addComment() {
+            if (!currentDiscussionId) return;
+            
+            const commentInput = document.getElementById('comment-input');
+            const content = commentInput.value.trim();
+            
+            if (!content) {
+                alert('Please enter a comment.');
+                return;
+            }
+            
+            if (!userId) {
+                alert('Please sign in to add a comment.');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/discuss/${currentDiscussionId}/comments`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content, userId })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Clear input and refresh discussion
+                    commentInput.value = '';
+                    viewDiscussion(currentDiscussionId);
+                } else {
+                    alert(`Error adding comment: ${data.message}`);
+                }
+            } catch (error) {
+                console.error('Error adding comment:', error);
+                alert(`Error adding comment: ${error.message}`);
+            }
+        }
+        
+        // Function to vote on a discussion
+        async function voteDiscussion(discussionId, vote) {
+            if (!userId) {
+                alert('Please sign in to vote.');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/discuss/${discussionId}/vote`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ vote, userId })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Update the UI based on the response
+                    const discussionElement = document.querySelector(`[data-id="${discussionId}"]`);
+                    if (discussionElement) {
+                        const upvoteBtn = discussionElement.querySelector('.vote-btn:first-child');
+                        const downvoteBtn = discussionElement.querySelector('.vote-btn:nth-child(2)');
+
+                        // Update vote counts
+                        upvoteBtn.textContent = `🔼 ${data.upvotes}`;
+                        downvoteBtn.textContent = `🔽 ${data.downvotes}`;
+
+                        // Update vote status
+                        if (vote === 'up') {
+                            upvoteBtn.classList.add('voted');
+                            downvoteBtn.classList.remove('voted');
+                        } else {
+                            downvoteBtn.classList.add('voted');
+                            upvoteBtn.classList.remove('voted');
+                        }
+                    }
+                } else {
+                    alert(data.message || 'Failed to vote');
+                }
+            } catch (error) {
+                console.error('Error voting:', error);
+                alert('Failed to vote. Please try again.');
+            }
+        }
+        
+        // Function to create a new discussion
+        async function createDiscussion(event) {
+            event.preventDefault();
+            
+            if (!userId) {
+                alert('Please sign in to create a discussion.');
+                return;
+            }
+            
+            const title = document.getElementById('discussion-title').value.trim();
+            const content = document.getElementById('discussion-content').value.trim();
+            
+            if (!title || !content) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/discuss', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        title,
+                        content,
+                        tags: currentTags,
+                        userId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Close modal and refresh discussions
+                    document.getElementById('create-discussion-modal').style.display = 'none';
+                    document.getElementById('discussion-form').reset();
+                    currentTags = [];
+                    document.getElementById('tags-container').innerHTML = '';
+                    loadDiscussions();
+                    loadPopularTags();
+                } else {
+                    alert(`Error creating discussion: ${data.message}`);
+                }
+            } catch (error) {
+                console.error('Error creating discussion:', error);
+                alert(`Error creating discussion: ${error.message}`);
+            }
+        }
+        
+        // Event listener for search button
+        document.getElementById('search-btn').addEventListener('click', () => {
+            const searchInput = document.getElementById('search-input').value.trim();
+            loadDiscussions(1, document.getElementById('tag-filter').value, searchInput);
+        });
+        
+        // Event listener for tag filter
+        document.getElementById('tag-filter').addEventListener('change', function() {
+            loadDiscussions(1, this.value, document.getElementById('search-input').value.trim());
+        });
+        
+        // Event listener for submit comment button
+        document.getElementById('submit-comment').addEventListener('click', addComment);
+        
+        // Event listener for create discussion button
+        document.getElementById('create-discussion-btn').addEventListener('click', () => {
+            if (!userId) {
+                alert('Please sign in to create a discussion.');
+                return;
+            }
+            document.getElementById('create-discussion-modal').style.display = 'flex';
+        });
+        
+        // Event listener for discussion form
+        document.getElementById('discussion-form').addEventListener('submit', createDiscussion);
+        
+        // Event listener for adding tags
+        document.getElementById('discussion-tags').addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                const tag = this.value.trim();
+                
+                if (tag && !currentTags.includes(tag)) {
+                    currentTags.push(tag);
+                    const tagsContainer = document.getElementById('tags-container');
+                    const tagElement = document.createElement('div');
+                    tagElement.className = 'tag';
+                    tagElement.innerHTML = `
+                        ${tag}
+                        <span onclick="removeTag('${tag}')">&times;</span>
+                    `;
+                    tagsContainer.appendChild(tagElement);
+                }
+                
+                this.value = '';
+            }
+        });
+        
+        // Function to remove a tag
+        window.removeTag = function(tag) {
+            currentTags = currentTags.filter(t => t !== tag);
+            const tagsContainer = document.getElementById('tags-container');
+            tagsContainer.innerHTML = '';
+            
+            currentTags.forEach(tag => {
+                const tagElement = document.createElement('div');
+                tagElement.className = 'tag';
+                tagElement.innerHTML = `
+                    ${tag}
+                    <span onclick="removeTag('${tag}')">&times;</span>
+                `;
+                tagsContainer.appendChild(tagElement);
+            });
+        };
+        
+        // Close modals when clicking the X
+        document.querySelectorAll('.close').forEach(closeBtn => {
+            closeBtn.addEventListener('click', function() {
+                this.closest('.modal').style.display = 'none';
+            });
+        });
+        
+        // Close modals when clicking outside
+        window.addEventListener('click', function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+
+</html>

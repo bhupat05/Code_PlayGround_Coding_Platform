@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= contestName %> Leaderboard - Code Playground</title>
+    <link rel="icon" href="/fevi.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="/fevi.ico" type="image/x-icon">
+    <link rel="stylesheet" href="/css/leaderboard.css">
+    <style>
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 15px;
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+        
+        .back-btn:hover {
+            background-color: #45a049;
+        }
+        
+        .contest-name {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .winner-highlight {
+            background-color: #f0fff0;
+        }
+        
+        .winner-highlight td:first-child {
+            position: relative;
+        }
+        
+        .winner-highlight td:first-child::before {
+            content: "🏆";
+            position: absolute;
+            left: -25px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .empty-message {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+        
+        /* Responsive styles */
+        @media screen and (max-width: 600px) {
+            .winner-highlight td:first-child::before {
+                left: -15px;
+                font-size: 0.9em;
+            }
+            
+            .contest-name {
+                font-size: 1.2rem;
+                margin-bottom: 15px;
+            }
+        }
+        
+        @media screen and (max-width: 480px) {
+            .winner-highlight td:first-child::before {
+                display: none;
+            }
+            
+            .winner-highlight td:first-child::after {
+                content: " 🏆";
+                margin-left: 5px;
+            }
+            
+            .empty-message {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">
+            <a href="/explore">
+                <img src="/lo.png" alt="Logo">
+            </a>
+        </div>
+        <ul class="nav-links">
+            <li><a href="/explore">Explore</a></li>
+            <li><a href="/problems">Problems</a></li>
+            <li><a href="/contests">Contests</a></li>
+            <li><a href="/discuss">Discuss</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="/profile" class="profile-icon">👤</a></li>
+        </ul>
+    </nav>
+
+    <!-- Leaderboard Section -->
+    <section class="leaderboard-section">
+        <a href="/contests" class="back-btn">← Back to Contests</a>
+        <h2 class="contest-name"><%= contestName %> - Final Standings</h2>
+
+        <!-- Leaderboard Table -->
+        <div class="table-responsive">
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Username</th>
+                        <th>Score</th>
+                        <th>Problems Solved</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (leaderboard && leaderboard.length > 0) { %>
+                        <% leaderboard.forEach((entry, index) => { %>
+                            <tr class="<%= index === 0 ? 'winner-highlight' : '' %>">
+                                <td><%= entry.rank %></td>
+                                <td><%= entry.username %></td>
+                                <td><%= entry.score %></td>
+                                <td><%= entry.problemsSolved %></td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="4" class="empty-message">No participants in this contest yet.</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2025 Code Playground. All rights reserved.</p>
+    </footer>
+
+</body>
+
+</html>

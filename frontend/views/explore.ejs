@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Explore - Code Playground</title>
+    <link rel="icon" href="/fevi.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="/fevi.ico" type="image/x-icon">
+    <link rel="stylesheet" href="/css/explore.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">
+            <a href="/" title="Logo">
+                <img src="lo.png" alt="Code Playground Logo">
+            </a>
+        </div>
+        <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+        <ul class="nav-links">
+            <li><a href="/explore">Explore</a></li>
+            <li><a href="/problems">Problems</a></li>
+            <li><a href="/contests">Contests</a></li>
+            <li><a href="/discuss">Discuss</a></li>
+            <li><a href="/contact">About Us</a></li>
+            <li><a href="/profile">👤</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <!-- Explore Section -->
+        <section class="explore">
+            <h1>Explore Code Playground</h1>
+
+            <!-- Scrollable Featured Problems -->
+            <h2>Featured Problems</h2>
+            <div class="scroll-container" id="featured-problems">
+                <!-- Problems will be loaded here -->
+                <div class="explore-card loading">
+                    <h3 class="problem-title">Loading problems...</h3>
+                    <p>Please wait while we fetch featured problems.</p>
+                </div>
+            </div>
+
+            <!-- Scrollable Coding Topics -->
+            <h2>Popular Coding Topics</h2>
+            <div class="scroll-container">
+                <div class="explore-card" style="--order: 1;">
+                    <h2>Data Structures</h2>
+                    <p>Learn stacks, queues, trees, and more.</p>
+                    <a href="/problems">Explore</a>
+                </div>
+                <div class="explore-card" style="--order: 2;">
+                    <h2>Algorithms</h2>
+                    <p>Master sorting, searching, and more.</p>
+                    <a href="/problems">Explore</a>
+                </div>
+                <div class="explore-card" style="--order: 3;">
+                    <h2>System Design</h2>
+                    <p>Prepare for scalable system interviews.</p>
+                    <a href="/problems">Explore</a>
+                </div>
+            </div>
+
+            <!-- Scrollable Contests & Challenges -->
+            <h2>Challenges & Contests</h2>
+            <div class="scroll-container">
+                <div class="explore-card" style="--order: 1;">
+                    <h2>Daily Challenge</h2>
+                    <p>Practice one coding problem every day.</p>
+                    <a href="/contests">Try Now</a>
+                </div>
+                <div class="explore-card" style="--order: 2;">
+                    <h2>Upcoming Contests</h2>
+                    <p>Join coding contests to test your skills.</p>
+                    <a href="/contests">Register</a>
+                </div>
+            </div>
+
+            <!-- Scrollable Community Discussions -->
+            <h2>Community Discussions</h2>
+            <div class="scroll-container">
+                <div class="explore-card" style="--order: 1;">
+                    <h2>Join Discussions</h2>
+                    <p>Engage in discussions and solve doubts.</p>
+                    <a href="/discuss">Join Now</a>
+                </div>
+                <div class="explore-card" style="--order: 2;">
+                    <h2>Interview Experiences</h2>
+                    <p>Read real interview experiences from coders.</p>
+                    <a href="/discuss">Read More</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2025 Code Playground. All rights reserved.</p>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        document.querySelector('.menu-toggle').addEventListener('click', function() {
+            document.querySelector('.nav-links').classList.toggle('active');
+        });
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const navLinks = document.querySelector('.nav-links');
+            const menuToggle = document.querySelector('.menu-toggle');
+            
+            if (navLinks.classList.contains('active') && 
+                !event.target.closest('.nav-links') && 
+                event.target !== menuToggle) {
+                navLinks.classList.remove('active');
+            }
+        });
+
+        // Fetch featured problems from the database
+        async function fetchFeaturedProblems() {
+            try {
+                const response = await fetch('/api/problems?sort=newest&limit=3');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch problems');
+                }
+                const problems = await response.json();
+                displayFeaturedProblems(problems);
+            } catch (error) {
+                console.error('Error fetching problems:', error);
+                document.getElementById('featured-problems').innerHTML = `
+                    <div class="explore-card error">
+                        <h3 class="problem-title">Error Loading Problems</h3>
+                        <p>Unable to load featured problems. Please try again later.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Display the fetched problems in the UI
+        function displayFeaturedProblems(problems) {
+            const container = document.getElementById('featured-problems');
+            
+            if (!problems || problems.length === 0) {
+                container.innerHTML = `
+                    <div class="explore-card">
+                        <h3 class="problem-title">No Problems Found</h3>
+                        <p>There are currently no featured problems available.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Create HTML for each problem
+            const problemsHTML = problems.map((problem, index) => `
+                <div class="explore-card" style="--order: ${index + 1};">
+                    <h3 class="problem-title">${problem.title.length > 30 ? problem.title.substring(0, 30) + '...' : problem.title}</h3>
+                    <p>${problem.difficulty} | ${problem.description.substring(0, 60)}${problem.description.length > 60 ? '...' : ''}</p>
+                    <a href="/editcode/${problem._id}">Solve Now</a>
+                </div>
+            `).join('');
+
+            container.innerHTML = problemsHTML;
+        }
+
+        // Load problems when the page loads
+        document.addEventListener('DOMContentLoaded', fetchFeaturedProblems);
+    </script>
+</body>
+
+</html>

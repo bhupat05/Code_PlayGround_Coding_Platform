@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Contest - Code Playground</title>
+    <link rel="icon" href="/fevi.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="/fevi.ico" type="image/x-icon">
+    <link rel="stylesheet" href="../css/create_contest.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <a href="/explore">
+                <img src="/lo.png" alt="Logo">
+            </a>
+        </div>
+        <ul class="nav-links">
+            <li><a href="/explore">Explore</a></li>
+            <li><a href="/problems">Problems</a></li>
+            <li><a href="/contests">Contests</a></li>
+            <li><a href="/discuss">Discuss</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="/profile">👤</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <div id="status-message" class="status-message"></div>
+        
+        <section class="contest-section">
+            <div class="contest-header">
+                <h1>Create a New Contest</h1>
+                <p>Fill out the form below to create your custom coding competition</p>
+            </div>
+
+            <form id="create-contest-form" class="form-grid">
+                <!-- Basic Information -->
+                <div class="form-group">
+                    <label for="contest-name">Contest Name *</label>
+                    <input type="text" id="contest-name" name="name" required placeholder="Enter contest name">
+                </div>
+
+                <div class="form-group">
+                    <label for="contest-code">Contest Code *</label>
+                    <input type="text" id="contest-code" name="contestCode" required placeholder="Unique identifier">
+                </div>
+
+                <!-- Timing -->
+                <div class="form-group">
+                    <label for="start-time">Start Time *</label>
+                    <input type="datetime-local" id="start-time" name="startTime" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="end-time">End Time *</label>
+                    <input type="datetime-local" id="end-time" name="endTime" required>
+                </div>
+
+                <!-- Difficulty -->
+                <div class="form-group">
+                    <label for="difficulty">Difficulty Level</label>
+                    <select id="difficulty" name="difficulty">
+                        <option value="Easy">Easy</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="Hard">Hard</option>
+                    </select>
+                </div>
+
+                <!-- Visibility Control -->
+                <div class="form-group">
+                    <label for="visibility">Contest Visibility *</label>
+                    <select id="visibility" name="visibility" required>
+                        <option value="Private">Private</option>
+                        <!-- Public option will be added dynamically for admins -->
+                    </select>
+                    <span id="admin-only-label" class="admin-only">(Admin Only)</span>
+                </div>
+
+                <!-- Description -->
+                <div class="form-group full-width">
+                    <label for="contest-description">Description</label>
+                    <textarea id="contest-description" name="description" rows="4" placeholder="Describe your contest"></textarea>
+                </div>
+
+                <!-- Problem Selection Section -->
+                <div class="form-group full-width">
+                    <div class="form-section">
+                        <h3>Problem Management</h3>
+                        <p>Select problems from the problem bank</p>
+
+                        <div class="search-container">
+                            <input type="text" id="problem-search" class="search-input" placeholder="Search problems by title or difficulty...">
+                            <div id="search-results" class="search-results"></div>
+                        </div>
+
+                        <div class="problem-selection">
+                            <h4>Selected Problems *</h4>
+                            <div class="problem-list" id="selected-problems">
+                                <p class="empty-message">No problems selected yet</p>
+                            </div>
+                            <input type="hidden" id="selected-problems-input" name="problems">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="reset" class="btn btn-secondary">Reset Form</button>
+                    <button type="submit" class="btn btn-primary">Create Contest</button>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2025 Code Playground. All rights reserved.</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            // DOM Elements
+            const problemSearch = document.getElementById('problem-search');
+            const searchResults = document.getElementById('search-results');
+            const selectedProblems = document.getElementById('selected-problems');
+            const selectedProblemsInput = document.getElementById('selected-problems-input');
+            const form = document.getElementById('create-contest-form');
+            const adminOnlyLabel = document.getElementById('admin-only-label');
+            const statusMessage = document.getElementById('status-message');
+            
+            // State
+            let selectedProblemsList = [];
+            let debounceTimer;
+            let isAdmin = false;
+
+            // List of admin user IDs (must match your backend)
+            const ADMIN_USER_IDS = [
+                '67ea948007fde9615f747b4d',
+                '67e941f80831114bcb33d6a2',
+                '67e3a9e27dcd5a5316f96300'
+            ];
+
+            // Function to show status messages
+            function showStatusMessage(message, type) {
+                statusMessage.textContent = message;
+                statusMessage.className = 'status-message ' + type;
+                statusMessage.style.display = 'block';
+                setTimeout(() => {
+                    statusMessage.style.display = 'none';
+                }, 5000);
+            }
+
+            // Function to check admin status
+            async function checkAdminStatus() {
+                try {
+                    // Get user ID from localStorage or your auth system
+                    const userId = localStorage.getItem('userId');
+                    
+                    if (!userId) {
+                        showStatusMessage('Please sign in to create a contest', 'error');
+                        return false;
+                    }
+                    
+                    // Check if user is admin
+                    isAdmin = ADMIN_USER_IDS.includes(userId);
+                    return isAdmin;
+                } catch (error) {
+                    console.error('Error checking admin status:', error);
+                    return false;
+                }
+            }
+
+            // Function to update visibility options based on admin status
+            function updateVisibilityOptions(isAdmin) {
+                const visibilitySelect = document.getElementById('visibility');
+                
+                // Always keep Private option
+                visibilitySelect.innerHTML = '<option value="Private">Private</option>';
+                
+                if (isAdmin) {
+                    // Add Public option for admins
+                    const publicOption = document.createElement('option');
+                    publicOption.value = 'Public';
+                    publicOption.textContent = 'Public';
+                    visibilitySelect.appendChild(publicOption);
+                    adminOnlyLabel.style.display = 'inline';
+                } else {
+                    adminOnlyLabel.style.display = 'none';
+                }
+            }
+
+            // Initialize the form
+            async function initializeForm() {
+                // Set default start time (now + 1 hour)
+                const now = new Date();
+                now.setHours(now.getHours() + 1);
+                document.getElementById('start-time').value = now.toISOString().slice(0, 16);
+                
+                // Set default end time (start time + 2 hours)
+                const endTime = new Date(now);
+                endTime.setHours(endTime.getHours() + 2);
+                document.getElementById('end-time').value = endTime.toISOString().slice(0, 16);
+                
+                // Generate a random contest code if empty
+                if (!document.getElementById('contest-code').value) {
+                    document.getElementById('contest-code').value = 
+                        'CP-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+                }
+                
+                // Check admin status and update visibility options
+                const adminStatus = await checkAdminStatus();
+                updateVisibilityOptions(adminStatus);
+            }
+
+            // Problem search functionality
+            problemSearch.addEventListener('input', function(e) {
+                clearTimeout(debounceTimer);
+                const searchTerm = e.target.value.trim();
+                
+                if (searchTerm.length < 2) {
+                    searchResults.style.display = 'none';
+                    return;
+                }
+                
+                debounceTimer = setTimeout(() => {
+                    searchProblems(searchTerm);
+                }, 300);
+            });
+
+            // Close search results when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.search-container')) {
+                    searchResults.style.display = 'none';
+                }
+            });
+
+            // Search problems in database
+            async function searchProblems(searchTerm) {
+                try {
+                    const response = await fetch(`/api/problems/search?q=${encodeURIComponent(searchTerm)}`);
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok: ' + response.statusText);
+                    }
+                    
+                    const data = await response.json();
+                    const problems = Array.isArray(data) ? data : (data.problems || []);
+                    
+                    displaySearchResults(problems);
+                } catch (error) {
+                    console.error('Search failed:', error);
+                    searchResults.innerHTML = '<div class="search-result-item">Error loading problems: ' + error.message + '</div>';
+                    searchResults.style.display = 'block';
+                }
+            }
+
+            // Display search results
+            function displaySearchResults(problems) {
+                const results = Array.isArray(problems) ? problems : [];
+                
+                if (results.length === 0) {
+                    searchResults.innerHTML = '<div class="search-result-item">No problems found</div>';
+                    searchResults.style.display = 'block';
+                    return;
+                }
+
+                searchResults.innerHTML = results.map(problem => `
+                    <div class="search-result-item" data-id="${problem._id}">
+                        <strong>${problem.title || 'Untitled Problem'}</strong> (${problem.difficulty || 'Unknown'})
+                        <div class="text-muted">${problem.description ? problem.description.substring(0, 50) + '...' : 'No description'}</div>
+                    </div>
+                `).join('');
+
+                // Add click handlers to search results
+                document.querySelectorAll('.search-result-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        const problemId = this.getAttribute('data-id');
+                        const problemTitle = this.querySelector('strong').textContent;
+                        const difficultyMatch = this.textContent.match(/\(([^)]+)\)/);
+                        const problemDifficulty = difficultyMatch ? difficultyMatch[1] : 'Medium';
+                        
+                        addProblemToSelection({
+                            _id: problemId,
+                            title: problemTitle,
+                            difficulty: problemDifficulty
+                        });
+                        
+                        problemSearch.value = '';
+                        searchResults.style.display = 'none';
+                    });
+                });
+
+                searchResults.style.display = 'block';
+            }
+
+            // Add problem to selected list
+            function addProblemToSelection(problem) {
+                if (selectedProblemsList.some(p => p._id === problem._id)) {
+                    showStatusMessage('This problem is already added', 'error');
+                    return;
+                }
+
+                selectedProblemsList.push(problem);
+                renderSelectedProblems();
+                updateHiddenInput();
+            }
+
+            // Render selected problems list
+            function renderSelectedProblems() {
+                if (selectedProblemsList.length === 0) {
+                    selectedProblems.innerHTML = '<p class="empty-message">No problems selected yet</p>';
+                    return;
+                }
+
+                selectedProblems.innerHTML = selectedProblemsList.map((problem, index) => `
+                    <div class="selected-problem" data-id="${problem._id}">
+                        <span>
+                            <strong>${problem.title}</strong> (${problem.difficulty})
+                        </span>
+                        <span class="remove-problem" data-index="${index}">✕ Remove</span>
+                    </div>
+                `).join('');
+
+                // Add remove handlers
+                document.querySelectorAll('.remove-problem').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const index = parseInt(this.getAttribute('data-index'));
+                        selectedProblemsList.splice(index, 1);
+                        renderSelectedProblems();
+                        updateHiddenInput();
+                    });
+                });
+            }
+
+            // Update hidden input with selected problem IDs
+            function updateHiddenInput() {
+                selectedProblemsInput.value = JSON.stringify(selectedProblemsList.map(p => p._id));
+            }
+
+            // Handle form submission
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Validate form
+                if (selectedProblemsList.length === 0) {
+                    showStatusMessage('Please select at least one problem', 'error');
+                    return;
+                }
+
+                const userId = localStorage.getItem('userId');
+                if (!userId) {
+                    showStatusMessage('Please sign in to create a contest', 'error');
+                    return;
+                }
+
+                // Get start and end times
+                const startTime = new Date(document.getElementById('start-time').value);
+                const endTime = new Date(document.getElementById('end-time').value);
+                
+                // Validate times
+                if (startTime >= endTime) {
+                    showStatusMessage('End time must be after start time', 'error');
+                    return;
+                }
+
+                if (startTime < new Date()) {
+                    showStatusMessage('Start time cannot be in the past', 'error');
+                    return;
+                }
+
+                // Get the selected visibility value
+                const visibilitySelect = document.getElementById('visibility');
+                const selectedVisibility = visibilitySelect.value;
+                
+                // Create form data
+                const formData = {
+                    name: document.getElementById('contest-name').value,
+                    contestCode: document.getElementById('contest-code').value,
+                    description: document.getElementById('contest-description').value,
+                    startTime: document.getElementById('start-time').value,
+                    endTime: document.getElementById('end-time').value,
+                    difficulty: document.getElementById('difficulty').value,
+                    visibility: selectedVisibility,
+                    problems: selectedProblemsList.map(p => p._id),
+                    userId: userId
+                };
+
+                try {
+                    // Show loading state
+                    const submitButton = form.querySelector('button[type="submit"]');
+                    submitButton.disabled = true;
+                    submitButton.textContent = 'Creating...';
+                    showStatusMessage('Creating contest...', 'success');
+                    
+                    // Send request
+                    const response = await fetch('/api/contests', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(formData)
+                    });
+                    
+                    const result = await response.json();
+                    
+                    // Reset button state
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Create Contest';
+                    
+                    if (response.ok && result.success) {
+                        // Show success message with contest details
+                        const successHtml = `
+                            <strong>Contest created successfully!</strong><br>
+                            Status: ${result.contest.status || 'Scheduled'}<br>
+                            Visibility: ${result.contest.visibility || selectedVisibility}<br>
+                            Code: <span style="font-weight:bold;" id="contest-code-display">${result.contest.contestCode}</span>
+                            <button id="copy-code-btn" style="margin-left:10px;">Copy Code</button>
+                        `;
+                        
+                        statusMessage.innerHTML = successHtml;
+                        statusMessage.className = 'status-message success';
+                        statusMessage.style.display = 'block';
+                        
+                        // Add copy functionality
+                        document.getElementById('copy-code-btn').addEventListener('click', function() {
+                            const codeText = document.getElementById('contest-code-display').textContent;
+                            navigator.clipboard.writeText(codeText)
+                                .then(() => {
+                                    this.textContent = 'Copied!';
+                                })
+                                .catch(err => {
+                                    console.error('Failed to copy: ', err);
+                                    this.textContent = 'Failed';
+                                });
+                        });
+                        
+                        // Reset form after successful submission
+                        form.reset();
+                        selectedProblemsList = [];
+                        renderSelectedProblems();
+                        initializeForm();
+                        
+                        // Redirect after a delay
+                        setTimeout(() => {
+                            window.location.href = '/contests';
+                        }, 5000);
+                    } else {
+                        showStatusMessage(result.msg || 'Failed to create contest', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error creating contest:', error);
+                    showStatusMessage('Failed to create contest: ' + error.message, 'error');
+                    
+                    // Reset button state
+                    const submitButton = form.querySelector('button[type="submit"]');
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Create Contest';
+                }
+            });
+
+            // Initialize the form
+            initializeForm();
+        });
+    </script>
+</body>
+</html>

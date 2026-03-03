@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Contests - Code Playground</title>
+    <link rel="icon" href="/fevi.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="/fevi.ico" type="image/x-icon">
+    <link rel="stylesheet" href="/css/contests.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">
+            <a href="/explore">
+                <img src="lo.png" alt="Code Playground Logo">
+            </a>
+        </div>
+        <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+        <ul class="nav-links">
+            <li><a href="/explore">Explore</a></li>
+            <li><a href="/problems">Problems</a></li>
+            <li><a href="/contests">Contests</a></li>
+            <li><a href="/discuss">Discuss</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+            <li><a href="/profile">👤</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <!-- Create & Join Contest Section -->
+        <div class="contest-container">
+            <!-- Create Contest Section -->
+            <div class="create-contest">
+                <a href="create_contest" class="btn create-contest-btn">Create Contest</a>
+            </div>
+
+            <!-- Join Contest Section -->
+            <div class="join-contest">
+                <form id="join-contest-form">
+                    <input type="text" id="contest-code" placeholder="Enter Contest Code" aria-label="Contest code" required>
+                    <button type="submit" class="btn join-contest-btn">Join Contest</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Upcoming & Ongoing Contests -->
+        <section class="contest-section">
+            <h2>Upcoming & Ongoing Contests</h2>
+            <div class="contest-table-wrapper">
+                <table class="contest-table" aria-label="Upcoming and ongoing contests">
+                    <thead>
+                        <tr>
+                            <th scope="col">Contest Name</th>
+                            <th scope="col">Description</th>
+                            <th scope="col">Start Time</th>
+                            <th scope="col">End Time</th>
+                            <th scope="col">Difficulty</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Participants</th>
+                            <th scope="col">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="upcoming-contests-body">
+                        <!-- Dynamically populated from database -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Past Contests & Leaderboards -->
+        <section class="contest-section">
+            <h2>Past Contests & Leaderboards</h2>
+            <div class="contest-table-wrapper">
+                <table class="contest-table" aria-label="Past contests and leaderboards">
+                    <thead>
+                        <tr>
+                            <th scope="col">Contest Name</th>
+                            <th scope="col">Description</th>
+                            <th scope="col">Start Time</th>
+                            <th scope="col">End Time</th>
+                            <th scope="col">Difficulty</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Winner</th>
+                            <th scope="col">Leaderboard</th>
+                        </tr>
+                    </thead>
+                    <tbody id="past-contests-body">
+                        <!-- Dynamically populated from database -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2025 Code Playground. All rights reserved.</p>
+    </footer>
+
+    <!-- Leaderboard Modal -->
+    <div id="leaderboard-modal" class="leaderboard-modal" aria-modal="true" role="dialog" aria-labelledby="modal-title">
+        <div class="leaderboard-modal-content">
+            <h3 id="modal-title">Leaderboard Not Available</h3>
+            <p>The leaderboard will be available after the contest has ended.</p>
+            <button id="close-modal-btn" class="close-modal-btn">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // Mobile menu toggle
+        document.querySelector('.menu-toggle').addEventListener('click', function() {
+            document.querySelector('.nav-links').classList.toggle('active');
+        });
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const navLinks = document.querySelector('.nav-links');
+            const menuToggle = document.querySelector('.menu-toggle');
+            
+            if (navLinks.classList.contains('active') && 
+                !event.target.closest('.nav-links') && 
+                event.target !== menuToggle) {
+                navLinks.classList.remove('active');
+            }
+        });
+
+        // Fetch and populate only public contests
+        async function fetchContests() {
+            try {
+                console.log("Fetching public contests...");
+                const response = await fetch('http://localhost:4000/api/contests');
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const data = await response.json();
+                
+                // Filter to show only public contests
+                const publicCurrentContests = data.currentContests.filter(contest => contest.visibility === 'Public');
+                const publicPastContests = data.pastContests.filter(contest => contest.visibility === 'Public');
+                
+                renderContests(publicCurrentContests, publicPastContests);
+
+            } catch (error) {
+                console.error('Failed to fetch contests:', error);
+                document.getElementById('upcoming-contests-body').innerHTML = `<tr><td colspan="8" class="error-text">Failed to load contests. Please try again later.</td></tr>`;
+                document.getElementById('past-contests-body').innerHTML = `<tr><td colspan="8" class="error-text">Failed to load contests. Please try again later.</td></tr>`;
+            }
+        }
+
+        function renderContests(currentContests = [], pastContests = []) {
+            const upcomingBody = document.getElementById('upcoming-contests-body');
+            const pastBody = document.getElementById('past-contests-body');
+
+            // Clear existing rows
+            upcomingBody.innerHTML = '';
+            pastBody.innerHTML = '';
+
+            // Show message if no contests available
+            if (currentContests.length === 0) {
+                upcomingBody.innerHTML = '<tr><td colspan="8" class="empty-text">No upcoming or ongoing contests available at the moment.</td></tr>';
+            }
+
+            if (pastContests.length === 0) {
+                pastBody.innerHTML = '<tr><td colspan="8" class="empty-text">No past contests available.</td></tr>';
+            }
+
+            // Render current contests (upcoming and ongoing)
+            currentContests.forEach(contest => {
+                const row = document.createElement('tr');
+                const startTime = new Date(contest.startTime).toLocaleString();
+                const endTime = new Date(contest.endTime).toLocaleString();
+
+                row.innerHTML = `
+                    <td>${contest.name}</td>
+                    <td>${contest.description || 'No description'}</td>
+                    <td>${startTime}</td>
+                    <td>${endTime}</td>
+                    <td>${contest.difficulty || 'Medium'}</td>
+                    <td>${contest.status || 'Scheduled'}</td>
+                    <td>${contest.participants ? contest.participants.length : 0}</td>
+                    <td>
+                        <button onclick="handleContestRegistration('${contest._id}')" class="register-btn" data-contest-id="${contest._id}" aria-label="${contest.status === 'Ongoing' ? 'Join ' : 'Register for '} ${contest.name}">
+                            ${contest.status === 'Ongoing' ? 'Join Now' : 'Register'}
+                        </button>
+                    </td>
+                `;
+                upcomingBody.appendChild(row);
+            });
+
+            // Render past contests with leaderboard button
+            pastContests.forEach(contest => {
+                const row = document.createElement('tr');
+                const startTime = new Date(contest.startTime).toLocaleString();
+                const endTime = new Date(contest.endTime).toLocaleString();
+                const topPerformer = contest.leaderboard && contest.leaderboard.length > 0
+                    ? contest.leaderboard[0].username || 'Anonymous'
+                    : 'No winner';
+                    
+                // Check if contest has actually ended
+                const isCompleted = contest.status === 'Completed';
+                const leaderboardBtnClass = isCompleted ? 'leaderboard-btn' : 'leaderboard-btn disabled';
+                const leaderboardBtnText = isCompleted ? 'View Leaderboard' : 'Leaderboard (Not Available)';
+
+                row.innerHTML = `
+                    <td>${contest.name}</td>
+                    <td>${contest.description || 'No description'}</td>
+                    <td>${startTime}</td>
+                    <td>${endTime}</td>
+                    <td>${contest.difficulty || 'Medium'}</td>
+                    <td>${contest.status || 'Completed'}</td>
+                    <td>${topPerformer}</td>
+                    <td>
+                        <button onclick="viewLeaderboard('${contest._id}')" class="${leaderboardBtnClass}" data-contest-id="${contest._id}" aria-label="View leaderboard for ${contest.name}" ${!isCompleted ? 'aria-disabled="true"' : ''}>
+                            ${leaderboardBtnText}
+                        </button>
+                    </td>
+                `;
+                pastBody.appendChild(row);
+            });
+
+            setupCountdownTimers();
+        }
+
+        // Handle contest registration/joining
+        async function handleContestRegistration(contestId) {
+            try {
+                // Get user data from localStorage
+                const userId = localStorage.getItem('userId');
+                console.log(userId)
+                
+                if (!userId) {
+                    alert('Please login first');
+                    window.location.href = '/signin';
+                    return;
+                }
+
+                const response = await fetch(`/api/contests/join/${contestId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        userId: userId
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || 'Failed to register for contest');
+                }
+
+                if (result.success) {
+                    alert('Successfully registered for the contest!');
+                    window.location.href = `/contestpage/${contestId}`;
+                } else {
+                    alert(result.message || 'Failed to register for contest');
+                }
+            } catch (error) {
+                console.error('Registration failed:', error);
+                alert('Failed to register for contest. Please try again.');
+            }
+        }
+
+        async function viewLeaderboard(contestId) {
+            console.log(`Checking leaderboard availability for contest ${contestId}`);
+            try {
+                // Fetch contest details to check if it has ended
+                const response = await fetch(`/api/contests/${contestId}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch contest details');
+                }
+                
+                const contest = await response.json();
+                
+                // If contest is completed, redirect to leaderboard
+                if (contest.status === 'Completed') {
+                    window.location.href = `/contest/${contestId}/leaderboard`;
+                } else {
+                    // Show modal with message that leaderboard is not available yet
+                    const modal = document.getElementById('leaderboard-modal');
+                    modal.style.display = 'flex';
+                }
+            } catch (error) {
+                console.error('Error checking leaderboard availability:', error);
+                alert('Failed to check leaderboard availability. Please try again later.');
+            }
+        }
+        
+        // Close modal when close button is clicked
+        document.getElementById('close-modal-btn').addEventListener('click', () => {
+            document.getElementById('leaderboard-modal').style.display = 'none';
+        });
+        
+        // Close modal when clicking outside of it
+        window.addEventListener('click', (event) => {
+            const modal = document.getElementById('leaderboard-modal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        // Handle countdown timers
+        function setupCountdownTimers() {
+            const countdownElements = document.querySelectorAll('.countdown');
+            countdownElements.forEach(el => {
+                const endTime = new Date(el.dataset.endTime);
+
+                const updateCountdown = () => {
+                    const now = new Date();
+                    const diff = endTime - now;
+
+                    if (diff <= 0) {
+                        el.textContent = 'Ended';
+                        return;
+                    }
+
+                    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                    el.textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+                };
+
+                updateCountdown();
+                setInterval(updateCountdown, 1000);
+            });
+        }
+
+        // Join private contest by code
+        document.getElementById('join-contest-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const contestCode = document.getElementById('contest-code').value.trim();
+
+            if (!contestCode) {
+                alert('Please enter a contest code');
+                return;
+            }
+
+            try {
+                const userId = localStorage.getItem('userId');
+                if (!userId) {
+                    alert('Please login first');
+                    window.location.href = '/signin';
+                    return;
+                }
+
+                const response = await fetch('/api/contests/join-by-code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({ contestCode, userId })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('Successfully joined the contest!');
+                    window.location.href = `/contestpage/${result.contestId}`;
+                } else {
+                    alert(result.message || 'Failed to join the contest');
+                }
+            } catch (error) {
+                console.error('Join contest failed:', error);
+                alert('Failed to join the contest');
+            }
+        });
+
+        // Fetch contests when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("DOM fully loaded and parsed");
+            fetchContests();
+        });
+    </script>
+</body>
+</html>
